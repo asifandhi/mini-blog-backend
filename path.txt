@@ -1,6 +1,0 @@
-npm init
-npm install express
-npm i dotenv
-
-# we are using the syntax of import instead of the require that why add in package.json
-            "type": "module",
