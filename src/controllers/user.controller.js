@@ -35,7 +35,7 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     // Create a new user
-    console.log("____________")
+    
     const user = await User.create({
         username : username.toLowerCase(),
         fullname,
@@ -45,16 +45,16 @@ const registerUser = asyncHandler(async (req, res) => {
         
     })
     
-    console.log("____________2")
+     
     const createdUser = await User.findById(user._id).select(
         "-password -refreshTokens"
     );
     
-    console.log("____________3")
+    
     if(!createdUser){
         throw new ApiError(500,"Unable to create user");
     }
-    console.log("____________4")
+    
 
     return res
     .status(201)
