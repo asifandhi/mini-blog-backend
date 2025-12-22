@@ -23,6 +23,10 @@ app.use(express.static('public'));
 // this is for cookie parser only server can read the cookie from the browser
 app.use(cookieParser());
 
+// routes
+import userRoutes from './routes/user.routes.js';
 
+// Routes declaration - middlewarea
+app.use("/api/v1/users",userRoutes);
 
 export { app };
