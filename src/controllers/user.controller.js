@@ -22,7 +22,7 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(409,"User with given username or email already exist");
     }
 
-    const PathForProifilePhtoto = req.file?.profilePhoto[0]?.path;
+    const PathForProifilePhtoto = req.files?.profilePhoto[0]?.path;
 
     if(!PathForProifilePhtoto){
         throw new ApiError(400,"Profile photo is required");
@@ -35,23 +35,26 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     // Create a new user
-
-    const user = new User.create({
+    console.log("____________")
+    const user = await User.create({
         username : username.toLowerCase(),
         fullname,
         email,
         password,
         profilePhoto: profilePhoto.url
-
+        
     })
-
+    
+    console.log("____________2")
     const createdUser = await User.findById(user._id).select(
         "-password -refreshTokens"
     );
-
+    
+    console.log("____________3")
     if(!createdUser){
         throw new ApiError(500,"Unable to create user");
     }
+    console.log("____________4")
 
     return res
     .status(201)
