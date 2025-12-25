@@ -93,7 +93,6 @@ const registerUser = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req,res) => {
     console.log("\nStart to login...0%\n");
     const { username,email,password} = req.body;
-    console.log("Username:",username,"Email:",email,"Password:",password,"fetched from body");
     
     if(!username && !email){
         throw new ApiError(400,"Username or email is required");
@@ -103,7 +102,6 @@ const loginUser = asyncHandler(async (req,res) => {
     const user = await User.findOne({
         $or : [{username},{email}]
     })
-    console.log("User is present in data base:",user.username);
     
     if(!user){
         throw new ApiError(404,"User not found");
