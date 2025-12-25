@@ -11,16 +11,19 @@ cloudinary.config({
 
 const uploadOnCloudinary = async(localFilePath) => {
     try{
+        console.log("\nUploading file to Cloudinary...0%\n");
+        
         if(!localFilePath){
             return null;
 
         }
 
         // Upload the file to Cloudinary
+        
         const response = await cloudinary.uploader.upload(localFilePath, {
             resource_type: 'auto'
         })
-        console.log('Cloudinary upload response:', response.url);
+        console.log("File uploaded to Cloudinary 100%\n");
 
         fs.unlinkSync(localFilePath); // Delete the local file after upload
 
@@ -33,5 +36,26 @@ const uploadOnCloudinary = async(localFilePath) => {
         return null;
     }
 }
+// this is for the delete function from cloudinary
+const deleteFromCloudinary = async(FilePath) => {
+    try {
+        if(!FilePath){
+            return null;
+        }
+        const response = await cloudinary.uploader.destroy(FilePath, {
+            resource_type:'image'
 
-export { uploadOnCloudinary };
+        });
+        return response;
+    } catch (error) {
+        console.error('Error deleting from Cloudinary:', error);
+        return null;
+        
+    }
+
+}
+
+export { 
+    uploadOnCloudinary,
+    deleteFromCloudinary
+ };

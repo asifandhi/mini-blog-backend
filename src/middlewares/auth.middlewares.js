@@ -6,25 +6,27 @@ import jwt from 'jsonwebtoken';
 export const verifyJWT = asyncHandler(async (req,res,next) => {
     try {
 
-        console.log("Starting to verify through JWT");
-        
-        
-        const token = req.cookies?.accessToken || req.header("Authorization")?.replace("bearer ","")
+        console.log("\nVerifying JWT token... 0%\n");
+
+
+        const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ","")
+
+        console.log(token);
         
         if(!token){
             throw new ApiError(401,"Unauthorized access, no token found");
         }
-        console.log("token found");
+        console.log("Token found 50%\n");
         
         const decoded = jwt.verify(token,process.env.ACCESS_TOKEN_SECRET);
-        console.log("token Decoded");
+        console.log("Token verified 80%\n");
         
         const user = await User.findById(decoded?._id).select("-password -refreshTokens");
         
         if(!user){
             throw new ApiError(401,"Unauthorized access, user not found");
         }   
-        console.log("user found");
+        console.log("User found 100%\n");
         
         req.user = user;
         next();

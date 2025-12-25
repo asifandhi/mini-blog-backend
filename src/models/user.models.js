@@ -60,13 +60,21 @@ const userSchema = new Schema(
 // this is also middleware
 userSchema.pre("save",async function() {
     // if password is not modified then do not hash it again
-    if(!this.isModified("password")) ;
+    if(!this.isModified("password")) return ; ;
     this.password = await bcrypt.hash(this.password,10);
+    
     
 })
 
 // for cheking the password
 userSchema.methods.isPasswordIsCorrect = async function (password) {
+    // console.log("-----------------****---------- \n Password checking started");
+
+    
+
+    // console.log("This is the this.password : ",this.password);
+    // console.log("This is the password to compare:", await bcrypt.hash(password,10));
+    
     
     return await bcrypt.compare(password,this.password)
 }

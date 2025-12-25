@@ -1,8 +1,9 @@
 import {asyncHandler} from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { User } from '../models/user.models.js';
-import { uploadOnCloudinary } from '../utils/cloudinaryService.js';
+import { deleteFromCloudinary, uploadOnCloudinary } from '../utils/cloudinaryService.js';
 import { ApiResponse} from '../utils/ApiResponse.js';
+import { getPublicIdFromUrl } from '../utils/publicUrlEx.js';
 
 const GenerateAccessTokenAndRefreshToken = async(userId) => {
     try {
@@ -22,11 +23,12 @@ const GenerateAccessTokenAndRefreshToken = async(userId) => {
 }
 
 const registerUser = asyncHandler(async (req, res) => {
-  
+    
     // Get the user data from the request body
-
+    console.log("\nStarting user registration... : %0");
+    
     const { username,fullname,email,password } = req.body;
-
+    
     if([username,fullname,email,password].some((feild) => feild?.trim() === "")){
         throw new ApiError(400,"All feilds are required");
     }
@@ -46,10 +48,12 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     const profilePhoto = await uploadOnCloudinary(PathForProifilePhtoto);
-
+    
+    
     if(!profilePhoto){
         throw new ApiError(500,"Unable to upload profile photo");
     }
+    console.log("Registration 75%\n");
 
     // Create a new user
     
@@ -62,7 +66,7 @@ const registerUser = asyncHandler(async (req, res) => {
         
     })
     
-     
+    
     const createdUser = await User.findById(user._id).select(
         "-password -refreshTokens"
     );
@@ -71,6 +75,8 @@ const registerUser = asyncHandler(async (req, res) => {
     if(!createdUser){
         throw new ApiError(500,"Unable to create user");
     }
+
+    console.log("Registration 100%\n");
     
 
     return res
@@ -85,14 +91,14 @@ const registerUser = asyncHandler(async (req, res) => {
 
 
 const loginUser = asyncHandler(async (req,res) => {
-    console.log("Start to login... ");
+    console.log("\nStart to login...0%\n");
     const { username,email,password} = req.body;
     console.log("Username:",username,"Email:",email,"Password:",password,"fetched from body");
     
     if(!username && !email){
         throw new ApiError(400,"Username or email is required");
     }
-    console.log("username or email is provided");
+    console.log("Login 30%\n");
     
     const user = await User.findOne({
         $or : [{username},{email}]
@@ -102,15 +108,15 @@ const loginUser = asyncHandler(async (req,res) => {
     if(!user){
         throw new ApiError(404,"User not found");
     }  
-    console.log("got user successfully");
+    console.log("Login 60%\n");
     
-
+    
     const isPasswordCorrect = await user.isPasswordIsCorrect(password);
 
     if(!isPasswordCorrect){
         throw new ApiError(401,"Invalid credentials");
     }
-    console.log("password is verified");
+    console.log("Login 80%\n");
     
 
     const {acesstoken,refreshtoken} = await GenerateAccessTokenAndRefreshToken(user._id);
@@ -125,9 +131,9 @@ const loginUser = asyncHandler(async (req,res) => {
         httpOnly: true,
         secure: true
     }
-    console.log("preparing to send response");
+    console.log("Login 100%\n");
     
-
+    
     return res
     .status(200)
     .cookie("refreshToken",refreshtoken,options)
@@ -148,7 +154,7 @@ const loginUser = asyncHandler(async (req,res) => {
 })
 
 const logoutUser = asyncHandler(async (req,res) => {
-    console.log("starting to Login Out\n ---------\n E-mail : ",req.user.email);
+    console.log("starting to Login Out\n ---------\n E-mail : ",req.user.email,"logging out 0%\n");
     
     await User.findByIdAndUpdate(
         req.user._id,
@@ -162,13 +168,13 @@ const logoutUser = asyncHandler(async (req,res) => {
             new : true
         }
     );
-    console.log("User refresh token removed from database");
+    console.log("User logged out 80%\n");
 
     const options = {
         httpOnly: true,
         secure: true
     }
-
+    console.log("User logged out 100%\n");
     return res
     .status(200)
     .clearCookie("refreshToken",options)
@@ -178,10 +184,70 @@ const logoutUser = asyncHandler(async (req,res) => {
     )
 });
 
+const DeleteUser = asyncHandler(async (req,res) => {
+    console.log("\nStarting to delete user :",req.user.username,"\n");
+
+    const { password,confirmPassword} = req.body;
+    if(!password || !confirmPassword){
+        throw new ApiError(400,"Password and confirm password are required");
+    }
+    console.log("Delete user 30%\n");
+    
+    if(password !== confirmPassword){
+        throw new ApiError(400,"Password and confirm password do not match");
+    }
+    
+    console.log("Delete user 60%\n");
+    const userWithPassword = await User.findById(req.user._id).select("+password");
+
+    const isPasswordCorrect = await userWithPassword.isPasswordIsCorrect(password);
+    if(!isPasswordCorrect){
+        throw new ApiError(401,"Invalid password");
+    }
+    
+    
+
+    const PathOfProfilePhoto =  req.user.profilePhoto;
+
+    
+    console.log("Delete user 80%\n");
+    
+    
+    if(!PathOfProfilePhoto){
+        throw new ApiError(400,"Path of Profile photo  is required");
+    }
+
+    const PublicId = getPublicIdFromUrl(PathOfProfilePhoto);
+    console.log("Delete user 90%\n");
+    
+
+    // const DeletePhotoFromTheCloudinary = await deleteFromCloudinary(PathOfProfilePhoto ? PublicId : null);
+    const DeletePhotoFromTheCloudinary = await deleteFromCloudinary(PublicId );
+    
+    
+    if(!DeletePhotoFromTheCloudinary){
+        throw new ApiError(500,"Unable to delete profile photo from cloudinary");
+    }
+    console.log("Delete user 95%\n");
+
+    await User.findByIdAndDelete(req.user._id);
+
+    console.log("Delete user 100%\n");
+
+    return res
+    .status(200)
+    .clearCookie("refreshToken")
+    .clearCookie("accessToken")
+    .json(
+        new ApiResponse(200,{},"User deleted successfully")
+    )
+})
+
 
 export { 
     registerUser,
     loginUser,
-    logoutUser 
+    logoutUser,
+    DeleteUser
 
 };
