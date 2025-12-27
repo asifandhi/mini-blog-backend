@@ -26,4 +26,5 @@ router.route("/updatePphoto").post(verifyJWT, upload.fields([
     }
 
 ]),updateProfilePhoto)
+
 export default router;

@@ -1,10 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.models.js";
-import {
-  deleteFromCloudinary,
-  uploadOnCloudinary,
-} from "../utils/cloudinaryService.js";
+import {deleteFromCloudinary,uploadOnCloudinary,} from "../utils/cloudinaryService.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { getPublicIdFromUrl } from "../utils/publicUrlEx.js";
 import jwt from "jsonwebtoken";
@@ -378,6 +375,8 @@ const updateProfilePhoto = asyncHandler(async (req,res) => {
     )
     
 });
+
+
 
 export {
   registerUser,
