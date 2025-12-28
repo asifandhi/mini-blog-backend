@@ -59,6 +59,13 @@ const getPostById = asyncHandler(async (req,res) => {
 
     const post = await Post.findById(postId)
     .populate("owner","username fullname")
+    .populate({
+        path : "comments",
+        populate :{
+            path : "commenter",
+            select : "username fullname" 
+        }
+    })
 
     if(!post){
         throw new ApiError(400,"Unable to fetch the post ")
@@ -73,6 +80,8 @@ const getPostById = asyncHandler(async (req,res) => {
 
 const deletePost = asyncHandler(async (req,res) => {
     const { postId } = req.params;
+    console.log(postId);
+    
     
     const post = await Post.findById(postId)
     
@@ -91,7 +100,7 @@ const deletePost = asyncHandler(async (req,res) => {
         throw new ApiError(400,"Unable to deletion of the post from clodinari")
     }
     
-    const deleteAtTheDB = await post.deleteOne()
+    const deleteAtTheDB = await Post.findByIdAndDelete(postId)
     
     if(!deleteAtTheDB){
         throw new ApiError(400,"Unable to deletion from DB")

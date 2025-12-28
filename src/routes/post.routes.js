@@ -13,7 +13,7 @@ router.route("/createpost").post(verifyJWT,upload.fields([
 ]),createPost)
 router.route("/getallposts").get(verifyJWT,getAllPost)
 router.route("/:postId").get(verifyJWT, getPostById);
-router.route("/c/:deletePost").get(verifyJWT, deletePost);
+router.route("/:postId").delete(verifyJWT, deletePost);
 
 
 
