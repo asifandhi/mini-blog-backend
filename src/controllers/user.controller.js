@@ -213,10 +213,15 @@ const DeleteUser = asyncHandler(async (req, res) => {
   if (!DeletePhotoFromTheCloudinary) {
     throw new ApiError(500, "Unable to delete profile photo from cloudinary");
   }
-  
+
+  await Post.updateMany(
+    { likes: req.user._id },
+    { $pull: { likes: req.user._id } }
+  );
+
+  await Comment.deleteMany({ commenter: req.user._id });
   const posts = await Post.find({ owner: req.user._id });
 
-  
   try {
     for (const post of posts) {
       if (post.imageOfPost) {
@@ -225,11 +230,10 @@ const DeleteUser = asyncHandler(async (req, res) => {
       }
       await Comment.deleteMany({ post: post._id });
     }
-    await Post.deleteMany({owner : req.user._id})
+    await Post.deleteMany({ owner: req.user._id });
   } catch (error) {
     throw new ApiError(400, "Error while deleting Post  and comment ");
   }
-
 
   console.log("Delete user 95%\n");
 
