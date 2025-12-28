@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createPost } from "../controllers/post.controller.js";
+import { createPost, deletePost, getAllPost, getPostById } from "../controllers/post.controller.js";
 import { upload } from "../middlewares/multer.middlewares.js";
 import { verifyJWT } from "../middlewares/auth.middlewares.js";
 
@@ -11,7 +11,9 @@ router.route("/createpost").post(verifyJWT,upload.fields([
         maxCount :1
     }
 ]),createPost)
-
+router.route("/getallposts").get(verifyJWT,getAllPost)
+router.route("/:postId").get(verifyJWT, getPostById);
+router.route("/c/:deletePost").get(verifyJWT, deletePost);
 
 
 
