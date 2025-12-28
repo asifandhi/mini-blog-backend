@@ -1,10 +1,15 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.models.js";
-import {deleteFromCloudinary,uploadOnCloudinary,} from "../utils/cloudinaryService.js";
+import {
+  deleteFromCloudinary,
+  uploadOnCloudinary,
+} from "../utils/cloudinaryService.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { getPublicIdFromUrl } from "../utils/publicUrlEx.js";
 import jwt from "jsonwebtoken";
+import { Post } from "../models/post.models.js";
+import { Comment } from "../models/comment.models.js";
 
 const GenerateAccessTokenAndRefreshToken = async (userId) => {
   try {
@@ -208,6 +213,24 @@ const DeleteUser = asyncHandler(async (req, res) => {
   if (!DeletePhotoFromTheCloudinary) {
     throw new ApiError(500, "Unable to delete profile photo from cloudinary");
   }
+  
+  const posts = await Post.find({ owner: req.user._id });
+
+  
+  try {
+    for (const post of posts) {
+      if (post.imageOfPost) {
+        const public_Id = getPublicIdFromUrl(post.imageOfPost);
+        await deleteFromCloudinary(public_Id);
+      }
+      await Comment.deleteMany({ post: post._id });
+    }
+    await Post.deleteMany({owner : req.user._id})
+  } catch (error) {
+    throw new ApiError(400, "Error while deleting Post  and comment ");
+  }
+
+
   console.log("Delete user 95%\n");
 
   await User.findByIdAndDelete(req.user._id);
@@ -328,55 +351,50 @@ const updateDetails = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "User details updated successfully"));
 });
 
-const updateProfilePhoto = asyncHandler(async (req,res) => {
-    const NewProfilePhotoPath = req.files?.profilePhoto[0]?.path;
-    if(!NewProfilePhotoPath) {
-        throw new ApiError(400,"Profile file is missing")
-    }
+const updateProfilePhoto = asyncHandler(async (req, res) => {
+  const NewProfilePhotoPath = req.files?.profilePhoto[0]?.path;
+  if (!NewProfilePhotoPath) {
+    throw new ApiError(400, "Profile file is missing");
+  }
 
-      const oldPathOfProfilePhoto = req.user.profilePhoto;
-      if(!oldPathOfProfilePhoto){
-        throw new ApiError(401,"Old path of phtot missing.....")
+  const oldPathOfProfilePhoto = req.user.profilePhoto;
+  if (!oldPathOfProfilePhoto) {
+    throw new ApiError(401, "Old path of phtot missing.....");
+  }
+  const oldPublicId = getPublicIdFromUrl(oldPathOfProfilePhoto);
 
-      }
-      const oldPublicId = getPublicIdFromUrl(oldPathOfProfilePhoto)
+  if (!oldPublicId) {
+    throw new ApiError(400, "Error during the public Id");
+  }
 
-      if(!oldPublicId){
-        throw new ApiError(400,"Error during the public Id")
-      }
-
-      const Delete = await deleteFromCloudinary(oldPublicId)
-       if (!Delete) {
+  const Delete = await deleteFromCloudinary(oldPublicId);
+  if (!Delete) {
     throw new ApiError(500, "Unable to delete profile photo from cloudinary");
-    }
+  }
 
-    const uploadNewImageOnCloudinari = await uploadOnCloudinary(NewProfilePhotoPath)
+  const uploadNewImageOnCloudinari =
+    await uploadOnCloudinary(NewProfilePhotoPath);
 
-    if(!uploadNewImageOnCloudinari.url){
-      throw new ApiError(401,"Error while uploading new photo")
-    }
+  if (!uploadNewImageOnCloudinari.url) {
+    throw new ApiError(401, "Error while uploading new photo");
+  }
 
-    const user = await User.findByIdAndUpdate(
-      req.user?._id,
-      {
-        $set:{
-          profilePhoto:uploadNewImageOnCloudinari.url
-        }
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        profilePhoto: uploadNewImageOnCloudinari.url,
       },
-      {
-        new:true
-      }
-    ).select("-password")
+    },
+    {
+      new: true,
+    }
+  ).select("-password");
 
-    return res
+  return res
     .status(200)
-    .json(
-      new ApiResponse(200,user,"Profile photo update successfully")
-    )
-    
+    .json(new ApiResponse(200, user, "Profile photo update successfully"));
 });
-
-
 
 export {
   registerUser,
@@ -387,5 +405,5 @@ export {
   changePassword,
   getCurrentUser,
   updateDetails,
-  updateProfilePhoto
+  updateProfilePhoto,
 };

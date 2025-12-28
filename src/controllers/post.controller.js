@@ -80,7 +80,6 @@ const getPostById = asyncHandler(async (req,res) => {
 
 const deletePost = asyncHandler(async (req,res) => {
     const { postId } = req.params;
-    console.log(postId);
     
     
     const post = await Post.findById(postId)
@@ -100,12 +99,18 @@ const deletePost = asyncHandler(async (req,res) => {
         throw new ApiError(400,"Unable to deletion of the post from clodinari")
     }
     
+    const deleteComments = await Comment.deleteMany({post:post._id})
+    if(!deleteComments){
+        throw new ApiError(400,"Unable to delete comments")
+        
+    }
     const deleteAtTheDB = await Post.findByIdAndDelete(postId)
     
     if(!deleteAtTheDB){
         throw new ApiError(400,"Unable to deletion from DB")
 
     }
+
     return res
     .status(200)
     .json(

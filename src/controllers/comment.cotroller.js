@@ -37,41 +37,33 @@ const addComment = asyncHandler(async (req, res) => {
 const deleteCommnet = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
 
-  const comment = await  Comment.findById(commentId);
+  const comment = await Comment.findById(commentId);
   if (!comment) {
     throw new ApiError(404, "Comment not found");
   }
 
- 
-
-  if (!comment.commenter.equals(req.user._id) ) {
+  if (!comment.commenter.equals(req.user._id)) {
     throw new ApiError(403, "You are not allowed to delete this comment");
   }
 
-  const removeCommnetFromPostArray = await Post.findByIdAndUpdate(comment.post,
+  const removeCommnetFromPostArray = await Post.findByIdAndUpdate(
+    comment.post,
     {
-        $pull : {comments :comment._id }
+      $pull: { comments: comment._id },
     }
-)
-if(!removeCommnetFromPostArray){
-  throw new ApiError(400,"Unable to remove  commnet from the post array ")
-}
+  );
+  if (!removeCommnetFromPostArray) {
+    throw new ApiError(400, "Unable to remove  commnet from the post array ");
+  }
 
-  const deletionOfA_Commnet = await Comment.findByIdAndDelete(commentId)
-  if(!deletionOfA_Commnet){
-    throw new ApiError(400,"Unable to delete the commnet from DB")
+  const deletionOfA_Commnet = await Comment.findByIdAndDelete(commentId);
+  if (!deletionOfA_Commnet) {
+    throw new ApiError(400, "Unable to delete the commnet from DB");
   }
 
   return res
-.status(201)
-.json(
-    new ApiResponse(201,{},"Commnet deleted successfully ")
-)
-
+    .status(201)
+    .json(new ApiResponse(201, {}, "Commnet deleted successfully "));
 });
 
-
-export { 
-    addComment,
-    deleteCommnet
- };
+export { addComment, deleteCommnet };
